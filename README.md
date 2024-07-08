@@ -71,4 +71,4 @@ Windows/Mac/Linux: `deactivate`
 
 ---
 
-When rerunning the program, the virtual environment need not be recreated (skip step 2.a). It is safest to delete the output folder from the previous execution of the program before running it again.
+> Note: When rerunning the program, the virtual environment need not be recreated (skip step 2.a). It is safest to delete the output folder from the previous execution of the program before running it again.
