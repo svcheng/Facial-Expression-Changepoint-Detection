@@ -23,7 +23,7 @@ Windows: `python -m venv .venv`
 
 Mac/Linux: `python3 -m venv .venv`
 
-- Note: if multiple versions of Python are installed on the system, it may be necessary to replace `python` with the appropriate command to invoke the correct version of Python
+- Note: for this step, if multiple versions of Python are installed on the system, it may be necessary to replace `python` with the appropriate command to invoke the correct version of Python
 
 ### c. Activate the virtual environment
 
