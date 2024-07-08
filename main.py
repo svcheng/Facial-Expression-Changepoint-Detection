@@ -107,9 +107,8 @@ def benchmark(sample_size: int, chunksizes: list[int]) -> None:
 
 
 def main() -> None:
-    # all_vids = get_all_videos()
-    # run(vid_paths=all_vids)
-    benchmark(3, [1, 8])
+    all_vids = get_all_videos()
+    run(vid_paths=all_vids[:3])
 
 
 if __name__ == "__main__":
