@@ -72,7 +72,7 @@ def preprocess_for_mediapipe(
 
 def new_landmarker() -> mp.tasks.vision.FaceLandmarker:
     """
-    Convenience function that returns a new instance of the mediapipe face landmarker
+    Convenience function that returns a new instance of the Mediapipe face landmarker
     """
 
     landmarker = mp.tasks.vision.FaceLandmarker.create_from_options(

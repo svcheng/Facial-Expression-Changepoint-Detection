@@ -56,7 +56,7 @@ def process_video(vid_path: Path) -> str:
 
 def run(vid_paths: list[Path], chunksize: int = 8) -> None:
     """
-    Processes the given videos, using multiprocessing to speed up execution]
+    Processes the given videos, using multiprocessing to speed up execution
     """
 
     with Pool() as pool:
