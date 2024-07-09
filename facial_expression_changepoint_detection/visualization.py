@@ -120,7 +120,9 @@ class Animation:
         self.img_plot = img_ax.imshow(first_frame)
 
     def run(self) -> None:
-        """Plays the animation"""
+        """
+        Plays the animation
+        """
 
         def gen_func():
             """The function that generates the input to the animate function on every iteration of the animation"""

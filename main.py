@@ -55,7 +55,9 @@ def process_video(vid_path: Path) -> str:
 
 
 def run(vid_paths: list[Path], chunksize: int = 8) -> None:
-    """Processes the given videos, using multiprocessing to speed up execution"""
+    """
+    Processes the given videos, using multiprocessing to speed up execution]
+    """
 
     with Pool() as pool:
         filenames = pool.imap_unordered(process_video, vid_paths, chunksize=chunksize)
@@ -64,7 +66,9 @@ def run(vid_paths: list[Path], chunksize: int = 8) -> None:
 
 
 def benchmark(sample_size: int, chunksizes: list[int]) -> None:
-    """Compares performance of the program on a random sample of all the videos when running with no multiprocessing, and with various chunk sizes for multiprocessing"""
+    """
+    Compares performance of the program on a random sample of all the videos when running with no multiprocessing, and with various chunk sizes for multiprocessing
+    """
 
     random.seed(0)
     vid_paths = random.sample(get_all_videos(), k=sample_size)
@@ -103,7 +107,6 @@ def benchmark(sample_size: int, chunksizes: list[int]) -> None:
 
 def main() -> None:
     all_vids = get_all_videos()
-    # all_vids = all_vids[-3:]
     t0 = time.perf_counter()
     run(vid_paths=all_vids)
     print(

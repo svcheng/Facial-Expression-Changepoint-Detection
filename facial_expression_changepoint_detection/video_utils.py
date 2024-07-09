@@ -31,7 +31,9 @@ def get_frames(vid_path: Path) -> Generator[tuple[np.ndarray, float], None, int]
 def save_frames(
     output_dir: Path, frames: list[np.ndarray], filenames: list[str]
 ) -> None:
-    """Saves the given frames in the given directory. Raises error if the given path does not exist, or exists but points to a file."""
+    """
+    Saves the given frames in the given directory. Raises error if the given path does not exist, or exists but points to a file.
+    """
 
     if not output_dir.exists():
         raise ValueError("Given path does not exist.")
