@@ -54,6 +54,8 @@ class VideoProcessor:
         Stores the filtered signal the first time it is called (regardless of what value is passed as num_changepoints)
         to avoid having to recompute it.
 
+        The return values may be interpreted as the indices of the frames that directly follow the changepoints.
+
         Returns:
             The computed changepoints
         """
@@ -62,21 +64,26 @@ class VideoProcessor:
             signal = self.signal_extractor.extract_signal(self.vid_path)
             self.filtered_signal = self.noise_filterer(signal)
 
-        return self.changepoint_detector.fit_predict(
+        changepoints = self.changepoint_detector.fit_predict(
             signal=self.filtered_signal, n_bkps=num_changepoints
         )[:-1]
+        return changepoints
 
     def select_frames(self, frame_count: int) -> list[np.ndarray]:
         """
         Returns:
-            The frame_count frames at the detected changepoints
+            A list of frame_count frames containing the first frame and the frames at frame_count-1 detected changepoints
         """
-
-        changepoints = self.get_changepoints(num_changepoints=frame_count)
+        changepoints = (
+            self.get_changepoints(num_changepoints=frame_count - 1)
+            if frame_count > 1
+            else []
+        )
+        indices = [0] + changepoints
         frames = [
             frame
             for i, (frame, _) in enumerate(get_frames(vid_path=self.vid_path))
-            if i in changepoints
+            if i in indices
         ]
         return frames
 
