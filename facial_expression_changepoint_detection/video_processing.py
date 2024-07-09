@@ -74,6 +74,7 @@ class VideoProcessor:
         Returns:
             A list of frame_count frames containing the first frame and the frames at frame_count-1 detected changepoints
         """
+
         changepoints = (
             self.get_changepoints(num_changepoints=frame_count - 1)
             if frame_count > 1
@@ -93,22 +94,34 @@ class VideoProcessor:
         """
 
         frames = self.select_frames(frame_count=frame_count)
-        filenames = [f"{self.vid_path.stem}_{i}.png" for i in range(frame_count)]
+        filenames = [f"{i}.png" for i in range(frame_count)]
         save_frames(output_dir=output_dir, frames=frames, filenames=filenames)
 
     def process(self, frame_counts: list[int], output_dir: Path) -> None:
         """
         Calls the select_and_save_frames method for all the frame_counts, saving files in the following directory structure:
         output_dir/
-            frame_counts[0]/
-            frame_counts[1]/
+            frame_counts[0]_frames/
+                video_name/
+                    0.png
+                    1.png
+                    .
+                    .
+                    .
+            frame_counts[1]_frames/
+                video_name/
+                    0.png
+                    1.png
+                    .
+                    .
+                    .
             .
             .
             .
         """
 
         for frame_count in frame_counts:
-            subdir = output_dir / str(frame_count)
+            subdir = output_dir / f"{frame_count}_frames" / self.vid_path.stem
             if not subdir.exists():
                 Path.mkdir(subdir, parents=True)
             self.select_and_save_frames(frame_count=frame_count, output_dir=subdir)

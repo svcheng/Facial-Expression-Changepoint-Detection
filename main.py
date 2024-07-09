@@ -109,7 +109,7 @@ def main() -> None:
     all_vids = get_all_videos()
 
     random.seed(0)
-    all_vids = random.sample(all_vids, k=3)
+    all_vids = random.sample(all_vids, k=2)
     t0 = time.perf_counter()
     run(vid_paths=all_vids)
     print(
