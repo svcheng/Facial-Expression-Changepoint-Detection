@@ -8,24 +8,10 @@ from facial_expression_changepoint_detection.landmarks import LandmarksSignalExt
 from facial_expression_changepoint_detection.video_processing import VideoProcessor
 from facial_expression_changepoint_detection.visualization import Animation
 
-# ================== CONFIGS ==================
+# ==================================== CONFIGS ====================================
 
 DATASET_PATH = Path(__file__).parent.parent / "DAiSEE" / "DataSet"
 SUBFOLDERS = [DATASET_PATH / subfolder for subfolder in ["Train", "Validation", "Test"]]
-EXAMPLE_VIDS = [
-    SUBFOLDERS[0] / vid
-    for vid in [
-        # boredom, engagement, confusion, frustration
-        "303830/303830274/303830274.mp4",  # 0 3 1 1
-        "310068/3100681045/3100681045.avi",  # 2 2 1 1
-        "310081/3100811002/3100811002.avi",  # 0 2 0 0
-        "400018/4000182069/4000182069.avi",  # 0 2 0 0
-        "210058/2100582062/2100582062.avi",  # 3 0 0 0
-        "110002/1100022056/1100022056.avi",  # 0 3 0 0
-        "111003/1110032004/1110032004.avi",  # 1 2 3 1
-        "210057/2100571044/2100571044.avi",  # 2 1 0 3
-    ]
-]
 FRAME_COUNTS = [1, 2, 3]
 OUTPUT_DIR = Path(__file__).parent.parent / "output"
 
@@ -56,12 +42,21 @@ def visualize(vid_paths: list[Path], frame_count: int) -> None:
 
 
 def process_video(vid_path: Path) -> str:
+    """
+    Processes a single video. Declared globally so that it can be passed to a multiprocessing pool
+
+    Returns:
+        The filename of the video passed
+    """
+
     vp = VideoProcessor(vid_path=vid_path)
     vp.process(frame_counts=FRAME_COUNTS, output_dir=OUTPUT_DIR)
     return str(vid_path.name)
 
 
 def run(vid_paths: list[Path], chunksize: int = 8) -> None:
+    """Processes the given videos, using multiprocessing to speed up execution"""
+
     with Pool() as pool:
         filenames = pool.imap_unordered(process_video, vid_paths, chunksize=chunksize)
         for filename in filenames:
@@ -69,7 +64,7 @@ def run(vid_paths: list[Path], chunksize: int = 8) -> None:
 
 
 def benchmark(sample_size: int, chunksizes: list[int]) -> None:
-    """Compares performance of the program on a random sample of all the videos with no multiprocessing, and with various chunk sizes for multiprocessing."""
+    """Compares performance of the program on a random sample of all the videos when running with no multiprocessing, and with various chunk sizes for multiprocessing"""
 
     random.seed(0)
     vid_paths = random.sample(get_all_videos(), k=sample_size)
@@ -108,7 +103,12 @@ def benchmark(sample_size: int, chunksizes: list[int]) -> None:
 
 def main() -> None:
     all_vids = get_all_videos()
-    run(vid_paths=all_vids[:3])
+    # all_vids = all_vids[-3:]
+    t0 = time.perf_counter()
+    run(vid_paths=all_vids)
+    print(
+        f"Finished processing all videos in {(time.perf_counter() - t0)/(60*60)} hours."
+    )
 
 
 if __name__ == "__main__":

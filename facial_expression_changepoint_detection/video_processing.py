@@ -11,6 +11,8 @@ from .video_utils import get_frames, save_frames
 
 
 class SignalExtractor(Protocol):
+    """A protocol for classes that can extract signals from videos"""
+
     @abstractmethod
     def extract_signal(self, vid_path: Path) -> np.ndarray: ...
 
@@ -22,13 +24,15 @@ class VideoProcessor:
         signal_extractor: Optional[SignalExtractor] = None,
         noise_filterer: Optional[Callable[[np.ndarray], np.ndarray]] = None,
         changepoint_detector: Optional[rpt.BottomUp] = None,
-    ):
+    ) -> None:
         self.vid_path = vid_path
         self.signal_extractor = (
             LandmarksSignalExtractor() if signal_extractor is None else signal_extractor
         )
 
         def default_filter(signal: np.ndarray):
+            """Savitsky-Golay filter with window length of 17 and polynomial order of 13"""
+
             return savgol_filter(
                 signal, window_length=17, polyorder=13, axis=-1, mode="nearest"
             )
@@ -37,7 +41,7 @@ class VideoProcessor:
             default_filter if noise_filterer is None else noise_filterer
         )
         self.changepoint_detector = (
-            rpt.BottomUp(model="rbf", jump=1)
+            rpt.BottomUp(model="rbf", jump=1)  # bottom-up change detection algorithm
             if changepoint_detector is None
             else changepoint_detector
         )
@@ -45,8 +49,13 @@ class VideoProcessor:
 
     def get_changepoints(self, num_changepoints: int) -> list[int]:
         """
-        Returns a list of detected changepoints.
-        Stores the filtered signal the first time it is called to avoid having to recompute it.
+        Computes the changepoints of the video by extracting a signal from it using the instance's SignalExtractor,
+        filters it using the instance's noise filtering function, then computes the changepoints from that filtered signal.
+        Stores the filtered signal the first time it is called (regardless of what value is passed as num_changepoints)
+        to avoid having to recompute it.
+
+        Returns:
+            The computed changepoints
         """
 
         if self.filtered_signal is None:
@@ -58,20 +67,22 @@ class VideoProcessor:
         )[:-1]
 
     def select_frames(self, frame_count: int) -> list[np.ndarray]:
-        """Returns the frame_count frames at the detected changepoints."""
+        """
+        Returns:
+            The frame_count frames at the detected changepoints
+        """
 
         changepoints = self.get_changepoints(num_changepoints=frame_count)
-
-        # get frames at changepoint indices
-        frames = []
-        for i, (frame, _) in enumerate(get_frames(vid_path=self.vid_path)):
-            if i in changepoints:
-                frames.append(frame)
+        frames = [
+            frame
+            for i, (frame, _) in enumerate(get_frames(vid_path=self.vid_path))
+            if i in changepoints
+        ]
         return frames
 
     def select_and_save_frames(self, frame_count: int, output_dir: Path) -> None:
         """
-        Selects frames from the video then saves them in the specified path.
+        Selects frames from the video then saves them in the specified path
         """
 
         frames = self.select_frames(frame_count=frame_count)

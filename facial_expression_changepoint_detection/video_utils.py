@@ -1,12 +1,16 @@
 import os
 from pathlib import Path
+from typing import Generator
 
 import cv2 as cv
 import numpy as np
 
 
-def get_frames(vid_path: Path):
-    """Returns an iterator through the frames of the video."""
+def get_frames(vid_path: Path) -> Generator[tuple[np.ndarray, float], None, int]:
+    """
+    Returns:
+        An iterator through the frames of the video
+    """
 
     video = cv.VideoCapture(str(vid_path))
     if not video.isOpened():
@@ -15,12 +19,13 @@ def get_frames(vid_path: Path):
     while video.isOpened():
         ret, frame = video.read()
         if not ret:
-            return
+            break
 
         timestamp = video.get(cv.CAP_PROP_POS_MSEC)
         yield frame, timestamp
 
     video.release()
+    return 0
 
 
 def save_frames(

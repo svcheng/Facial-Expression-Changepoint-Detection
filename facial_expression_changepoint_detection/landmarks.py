@@ -56,13 +56,22 @@ _DEFAULT_INDICES = set().union(*_68_INDICES)
 def preprocess_for_mediapipe(
     frame: np.ndarray, timestamp: float
 ) -> tuple[mp.Image, int]:
+    """
+    Converts the frame and timestamp to the format Mediapipe expects.
+    The frame is conveted to RGB (opencv reads frames in BGR), and an mp.Image object is created from it.
+    The timestamp is rounded to an integer.
+
+    Returns:
+        The frame and timestamp in a format ready to be consumed by a Mediapipe landmarker
+    """
+
     rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
     return mp_img, round(timestamp)
 
 
 def new_landmarker() -> mp.tasks.vision.FaceLandmarker:
-    """Convenience function that returns a new instance of the mediapipe face landmarker."""
+    """Convenience function that returns a new instance of the mediapipe face landmarker"""
 
     landmarker = mp.tasks.vision.FaceLandmarker.create_from_options(
         _MP_FACE_LANDMARKER_OPTIONS
@@ -72,6 +81,13 @@ def new_landmarker() -> mp.tasks.vision.FaceLandmarker:
 
 class LandmarksSignalExtractor:
     def __init__(self, indices: Optional[set[int]] = None):
+        """
+        Parameters:
+            indices:
+                The set of indices describing which of the Mediapipe face landmarker results
+                will be part of the return value of the get_facial_landmarks method
+        """
+
         self.landmarks_indices = indices if indices else _DEFAULT_INDICES
 
     def get_facial_landmarks(
@@ -80,6 +96,13 @@ class LandmarksSignalExtractor:
         timestamp: float,
         face_landmarker: mp.tasks.vision.FaceLandmarker,
     ) -> np.ndarray:
+        """
+        Returns:
+            The facial landmarks (x and y coordinates), flattened to a 1D array
+
+        Each call with the same face landmarker must be passed a larger timestamp than the previous
+        """
+
         mp_img, ts = preprocess_for_mediapipe(frame, timestamp)
 
         # call mediapipe model to get landmark coordinates
@@ -96,7 +119,10 @@ class LandmarksSignalExtractor:
         return facial_landmarks.ravel()
 
     def extract_signal(self, vid_path: Path) -> np.ndarray:
-        """Returns an n x m array, where n is the number of frames in the video and n is the number of landmark points."""
+        """
+        Returns:
+            An n x m array, where n is the number of frames in the video and n is the number of landmark points
+        """
 
         with new_landmarker() as face_landmarker:
             signal = np.vstack(
