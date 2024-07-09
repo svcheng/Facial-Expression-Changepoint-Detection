@@ -7,7 +7,7 @@ import ruptures as rpt
 from scipy.signal import savgol_filter
 
 from .landmarks import LandmarksSignalExtractor
-from .video_utils import get_frames, save_frames
+from .video_utils import get_frames_at_indices, save_frames
 
 
 class SignalExtractor(Protocol):
@@ -81,26 +81,16 @@ class VideoProcessor:
             else []
         )
         indices = [0] + changepoints
-        frames = [
-            frame
-            for i, (frame, _) in enumerate(get_frames(vid_path=self.vid_path))
-            if i in indices
-        ]
+        frames = get_frames_at_indices(vid_path=self.vid_path, indices=indices)
         return frames
-
-    def select_and_save_frames(self, frame_count: int, output_dir: Path) -> None:
-        """
-        Selects frames from the video then saves them in the specified path
-        """
-
-        frames = self.select_frames(frame_count=frame_count)
-        filenames = [f"{i}.png" for i in range(frame_count)]
-        save_frames(output_dir=output_dir, frames=frames, filenames=filenames)
 
     def process(self, frame_counts: list[int], output_dir: Path) -> None:
         """
-        Calls the select_and_save_frames method for all the frame_counts, saving files in the following directory structure:
+        Saves the selected frames for all counts in frame_count. Also stores the changepoints in a csv file.
+        Files are stored in the following directory structure:
+
         output_dir/
+            changepoints.csv
             frame_counts[0]_frames/
                 video_name/
                     0.png
@@ -119,9 +109,13 @@ class VideoProcessor:
             .
             .
         """
+        csv_file = output_dir / "changepoints"
 
         for frame_count in frame_counts:
             subdir = output_dir / f"{frame_count}_frames" / self.vid_path.stem
             if not subdir.exists():
                 Path.mkdir(subdir, parents=True)
-            self.select_and_save_frames(frame_count=frame_count, output_dir=subdir)
+
+            frames = self.select_frames(frame_count=frame_count)
+            filenames = [f"{i}.png" for i in range(frame_count)]
+            save_frames(output_dir=output_dir, frames=frames, filenames=filenames)

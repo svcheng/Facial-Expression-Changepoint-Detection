@@ -43,7 +43,7 @@ def visualize(vid_paths: list[Path], frame_count: int) -> None:
 
 def process_video(vid_path: Path) -> str:
     """
-    Processes a single video. Declared globally so that it can be passed to a multiprocessing pool
+    Processes a single video. Declared globally so that it can be passed to a multiprocessing pool.
 
     Returns:
         The filename of the video passed

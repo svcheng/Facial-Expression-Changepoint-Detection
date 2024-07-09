@@ -28,6 +28,15 @@ def get_frames(vid_path: Path) -> Generator[tuple[np.ndarray, float], None, int]
     return 0
 
 
+def get_frames_at_indices(vid_path: Path, indices: list[int]):
+    frames = [
+        frame
+        for i, (frame, _) in enumerate(get_frames(vid_path=vid_path))
+        if i in indices
+    ]
+    return frames
+
+
 def save_frames(
     output_dir: Path, frames: list[np.ndarray], filenames: list[str]
 ) -> None:
