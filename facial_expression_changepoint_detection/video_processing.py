@@ -1,3 +1,4 @@
+import csv
 from abc import abstractmethod
 from pathlib import Path
 from typing import Callable, Optional, Protocol
@@ -69,10 +70,11 @@ class VideoProcessor:
         )[:-1]
         return changepoints
 
-    def select_frames(self, frame_count: int) -> list[np.ndarray]:
+    def select_frames(self, frame_count: int) -> tuple[list[np.ndarray], list[int]]:
         """
         Returns:
             A list of frame_count frames containing the first frame and the frames at frame_count-1 detected changepoints
+            and the list of detected changepoints
         """
 
         changepoints = (
@@ -82,24 +84,84 @@ class VideoProcessor:
         )
         indices = [0] + changepoints
         frames = get_frames_at_indices(vid_path=self.vid_path, indices=indices)
-        return frames
+        return frames, changepoints
 
-    def process(self, frame_counts: list[int], output_dir: Path) -> None:
+    def save_selected_frames(
+        self, output_dir: Path, frames: list[np.ndarray], frame_count: int
+    ) -> None:
+        """
+        Calls select_frames, then saves the returned frames in the following format:
+
+        <output_dir>/
+            <frame_count>_frames/
+                <video_name>/
+                    0.png
+                    1.png
+                    .
+                    .
+                    .
+        """
+        # create subdirectory if it does not yet exist
+        subdir = output_dir / f"{frame_count}_frames" / self.vid_path.stem
+        if not subdir.exists():
+            Path.mkdir(subdir, parents=True)
+
+        # save frames
+        filenames = [f"{i}.png" for i in range(frame_count)]
+        save_frames(output_dir=subdir, frames=frames, filenames=filenames)
+
+    def save_changepoints_to_csv(
+        self, changepoints: list[int], csv_path: Path, frame_count: int
+    ) -> None:
+        """
+        Appends a row to the csv in the form:
+
+            video_file_name,frame_count,[0|changepoints]
+
+        where \"changepoints\" are the changepoint indices separated by |
+        """
+
+        changepoints_str = f"[{"|".join(str(cp) for cp in [0] + changepoints)}]"
+        # save changepoint data to csv
+        with csv_path.open(mode="a", newline="") as csv_file:
+            writer = csv.writer(csv_file, delimiter=",")
+            writer.writerow(
+                (
+                    self.vid_path.name,
+                    frame_count,
+                    changepoints_str,
+                )
+            )
+
+    def select_frames_and_save_data(
+        self, frame_count: int, output_dir, csv_path: Path
+    ) -> None:
+        frames, changepoints = self.select_frames(frame_count)
+        self.save_selected_frames(output_dir, frames, frame_count)
+        self.save_changepoints_to_csv(
+            csv_path=csv_path,
+            changepoints=changepoints,
+            frame_count=frame_count,
+        )
+
+    def process(
+        self, frame_counts: list[int], output_dir: Path, csv_path: Path
+    ) -> None:
         """
         Saves the selected frames for all counts in frame_count. Also stores the changepoints in a csv file.
         Files are stored in the following directory structure:
 
-        output_dir/
+        <output_dir>/
             changepoints.csv
-            frame_counts[0]_frames/
-                video_name/
+            <frame_counts[0]>_frames/
+                <video_name>/
                     0.png
                     1.png
                     .
                     .
                     .
-            frame_counts[1]_frames/
-                video_name/
+            <frame_counts[1]>_frames/
+                <video_name>/
                     0.png
                     1.png
                     .
@@ -109,13 +171,10 @@ class VideoProcessor:
             .
             .
         """
-        csv_file = output_dir / "changepoints"
 
         for frame_count in frame_counts:
-            subdir = output_dir / f"{frame_count}_frames" / self.vid_path.stem
-            if not subdir.exists():
-                Path.mkdir(subdir, parents=True)
-
-            frames = self.select_frames(frame_count=frame_count)
-            filenames = [f"{i}.png" for i in range(frame_count)]
-            save_frames(output_dir=output_dir, frames=frames, filenames=filenames)
+            self.select_frames_and_save_data(
+                frame_count=frame_count,
+                output_dir=output_dir,
+                csv_path=csv_path,
+            )

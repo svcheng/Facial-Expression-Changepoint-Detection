@@ -1,3 +1,4 @@
+import csv
 import itertools
 import random
 import time
@@ -14,6 +15,7 @@ DATASET_PATH = Path(__file__).parent.parent / "DAiSEE" / "DataSet"
 SUBFOLDERS = [DATASET_PATH / subfolder for subfolder in ["Train", "Validation", "Test"]]
 FRAME_COUNTS = [1, 2, 3]
 OUTPUT_DIR = Path(__file__).parent.parent / "output"
+CSV_PATH = OUTPUT_DIR / "changepoints.csv"
 
 
 def get_all_videos() -> list[Path]:
@@ -41,16 +43,33 @@ def visualize(vid_paths: list[Path], frame_count: int) -> None:
         animation.run()
 
 
+def create_output_destinations() -> None:
+    # create output directories if it they do not exist
+    frame_count_subdirs = [OUTPUT_DIR / f"{i}_frames" for i in FRAME_COUNTS]
+    for subdir in frame_count_subdirs:
+        if not subdir.exists():
+            Path.mkdir(subdir, parents=True)
+
+    # create csv file if it does not yet exist
+    if not CSV_PATH.exists():
+        CSV_PATH.touch()
+
+    # write header row, overwriting previous contents
+    with CSV_PATH.open(mode="w", newline="") as csv_file:
+        writer = csv.writer(csv_file, delimiter=",")
+        writer.writerow(("video", "frame_count", "frame_indices"))
+
+
 def process_video(vid_path: Path) -> str:
     """
-    Processes a single video. Declared globally so that it can be passed to a multiprocessing pool.
+    Processes a single video. Declared globally so that it can be passed to a multiprocessing pool
 
     Returns:
         The filename of the video passed
     """
 
     vp = VideoProcessor(vid_path=vid_path)
-    vp.process(frame_counts=FRAME_COUNTS, output_dir=OUTPUT_DIR)
+    vp.process(frame_counts=FRAME_COUNTS, output_dir=OUTPUT_DIR, csv_path=CSV_PATH)
     return str(vid_path.name)
 
 
@@ -59,6 +78,7 @@ def run(vid_paths: list[Path], chunksize: int = 8) -> None:
     Processes the given videos, using multiprocessing to speed up execution
     """
 
+    create_output_destinations()
     with Pool() as pool:
         filenames = pool.imap_unordered(process_video, vid_paths, chunksize=chunksize)
         for filename in filenames:
