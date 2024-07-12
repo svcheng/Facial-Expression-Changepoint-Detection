@@ -86,11 +86,11 @@ class VideoProcessor:
         frames = get_frames_at_indices(vid_path=self.vid_path, indices=indices)
         return frames, changepoints
 
-    def save_selected_frames(
+    def save_frames_to_directory(
         self, output_dir: Path, frames: list[np.ndarray], frame_count: int
     ) -> None:
         """
-        Calls select_frames, then saves the returned frames in the following format:
+        Saves frames in the following format:
 
         <output_dir>/
             <frame_count>_frames/
@@ -137,7 +137,7 @@ class VideoProcessor:
         self, frame_count: int, output_dir, csv_path: Path
     ) -> None:
         frames, changepoints = self.select_frames(frame_count)
-        self.save_selected_frames(output_dir, frames, frame_count)
+        self.save_frames_to_directory(output_dir, frames, frame_count)
         self.save_changepoints_to_csv(
             csv_path=csv_path,
             changepoints=changepoints,
