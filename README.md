@@ -45,23 +45,30 @@ The output is stored in a folder called 'output', in the same folder containing 
 
 ```
     output/
-        1/
-            video1_0.png
-            video2_0.png
+        changepoints.csv
+        1_frames/
+            video1/
+                0.png
+            video2/
+                0.png
             ...
-        2/
-            video1_0.png
-            video1_1.png
-            video2_0.png
-            video2_1.png
+        2_frames/
+            video1/
+                0.png
+                1.png
+            video2_0/
+                0.png
+                1.png
             ...
-        3/
-            video1_0.png
-            video1_1.png
-            video1_2.png
-            video2_0.png
-            video2_1.png
-            video2_2.png
+        3_frames/
+            video1/
+                0.png
+                1.png
+                2.png
+            video2_0/
+                0.png
+                1.png
+                2.png
             ...
 ```
 
