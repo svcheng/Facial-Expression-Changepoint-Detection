@@ -6,10 +6,10 @@
 
 ## 1. Download the 'src' folder
 
-Ensure the folder is in the same folder as the dataset:
+Ensure the folder is in the same folder as the dataset and that the dataset is named 'dataset':
 ```
     parentFolder/
-    	DAiSEE/
+    	dataset/
     	src/
 ```
 
@@ -41,7 +41,7 @@ Windows: `python main.py`
 
 Mac/Linux: `python3 main.py`
 
-The output is stored in a folder called 'output', in the same folder containing 'src' and the dataset, in the following format:
+The output is stored in a folder called 'output', beside 'src' and 'dataset', in the following format:
 
 ```
     output/
@@ -78,4 +78,4 @@ Windows/Mac/Linux: `deactivate`
 
 ---
 
-> Note: When rerunning the program, the virtual environment need not be recreated (skip step 2.a). It is safest to delete the output folder from the previous execution of the program before running it again.
+> Note: When rerunning the program, the virtual environment need not be recreated (skip step 2.a). Rerunning the program will overwrite the existing contents of the output folder.
