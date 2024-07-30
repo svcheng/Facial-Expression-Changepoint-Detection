@@ -1,5 +1,4 @@
 import csv
-import itertools
 import random
 import time
 from multiprocessing import Pool
@@ -11,19 +10,17 @@ from facial_expression_changepoint_detection.visualization import Animation
 
 # ==================================== CONFIGS ====================================
 
-DATASET_PATH = Path(__file__).parent.parent / "DAiSEE" / "DataSet"
-SUBFOLDERS = [DATASET_PATH / subfolder for subfolder in ["Train", "Validation", "Test"]]
+DATASET_PATH = Path(__file__).parent.parent / "dataset"
 FRAME_COUNTS = [1, 2, 3]
 OUTPUT_DIR = Path(__file__).parent.parent / "output"
 CSV_PATH = OUTPUT_DIR / "changepoints.csv"
+DEFAULT_CHUNKSIZE = 8
 
 
 def get_all_videos() -> list[Path]:
     return [
-        Path(dirpath) / filename
-        for dirpath, _, filenames in itertools.chain(
-            *[subfolder.walk(on_error=print) for subfolder in SUBFOLDERS]
-        )
+        dirpath / filename
+        for dirpath, _, filenames in DATASET_PATH.walk(on_error=print)
         for filename in filenames
     ]
 
@@ -73,7 +70,7 @@ def process_video(vid_path: Path) -> str:
     return str(vid_path.name)
 
 
-def run(vid_paths: list[Path], chunksize: int = 8) -> None:
+def run(vid_paths: list[Path], chunksize: int = DEFAULT_CHUNKSIZE) -> None:
     """
     Processes the given videos, using multiprocessing to speed up execution
     """
@@ -85,10 +82,13 @@ def run(vid_paths: list[Path], chunksize: int = 8) -> None:
             print(f"Finished processing of video {filename}\n")
 
 
-def benchmark(sample_size: int, chunksizes: list[int]) -> None:
+def benchmark(sample_size: int = 32, chunksizes: list[int] | None = None) -> None:
     """
     Compares performance of the program on a random sample of all the videos when running with no multiprocessing, and with various chunk sizes for multiprocessing
     """
+
+    if chunksizes is None:
+        chunksizes = [1, 4, 8, 16]
 
     random.seed(0)
     vid_paths = random.sample(get_all_videos(), k=sample_size)
