@@ -78,4 +78,4 @@ Windows/Mac/Linux: `deactivate`
 
 ---
 
-> Note: When rerunning the program, the virtual environment need not be recreated (skip step 2.a). Rerunning the program will overwrite the existing contents of the output folder.
+> Note: When rerunning the program, the virtual environment need not be recreated (skip step 2.b). Rerunning the program will overwrite the existing contents of the output folder.
