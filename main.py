@@ -1,6 +1,7 @@
 import csv
 import random
 import time
+from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -8,19 +9,12 @@ from facial_expression_changepoint_detection.landmarks import LandmarksSignalExt
 from facial_expression_changepoint_detection.video_processing import VideoProcessor
 from facial_expression_changepoint_detection.visualization import Animation
 
-# ==================================== CONFIGS ====================================
-
-DATASET_PATH = Path(__file__).parent.parent / "dataset"
-FRAME_COUNTS = [1, 2, 3]
-OUTPUT_DIR = Path(__file__).parent.parent / "output"
-CSV_PATH = OUTPUT_DIR / "changepoints.csv"
-DEFAULT_CHUNKSIZE = 8
-
 
 def get_all_videos() -> list[Path]:
+    dataset_path = Path(__file__).parent.parent / "dataset"
     return [
         dirpath / filename
-        for dirpath, _, filenames in DATASET_PATH.walk(on_error=print)
+        for dirpath, _, filenames in dataset_path.walk(on_error=print)
         for filename in filenames
     ]
 
@@ -40,24 +34,7 @@ def visualize(vid_paths: list[Path], frame_count: int) -> None:
         animation.run()
 
 
-def create_output_destinations() -> None:
-    # create output directories if it they do not exist
-    frame_count_subdirs = [OUTPUT_DIR / f"{i}_frames" for i in FRAME_COUNTS]
-    for subdir in frame_count_subdirs:
-        if not subdir.exists():
-            Path.mkdir(subdir, parents=True)
-
-    # create csv file if it does not yet exist
-    if not CSV_PATH.exists():
-        CSV_PATH.touch()
-
-    # write header row, overwriting previous contents
-    with CSV_PATH.open(mode="w", newline="") as csv_file:
-        writer = csv.writer(csv_file, delimiter=",")
-        writer.writerow(("video", "frame_count", "frame_indices"))
-
-
-def process_video(vid_path: Path) -> str:
+def process_video(vid_path: Path, frame_counts: list[int], output_dir: Path) -> str:
     """
     Processes a single video. Declared globally so that it can be passed to a multiprocessing pool
 
@@ -66,73 +43,112 @@ def process_video(vid_path: Path) -> str:
     """
 
     vp = VideoProcessor(vid_path=vid_path)
-    vp.process(frame_counts=FRAME_COUNTS, output_dir=OUTPUT_DIR, csv_path=CSV_PATH)
-    return str(vid_path.name)
+    vp.process(frame_counts, output_dir)
+    return vid_path.name
 
 
-def run(vid_paths: list[Path], chunksize: int = DEFAULT_CHUNKSIZE) -> None:
+def run(
+    vid_paths: list[Path],
+    frame_counts: list[int],
+    output_dir_name: str = "output",
+    use_multiprocessing: bool = True,
+    chunksize: int = 8,
+) -> float:
     """
     Processes the given videos, using multiprocessing to speed up execution
+
+    Returns:
+        The time consumed
     """
 
-    create_output_destinations()
-    with Pool() as pool:
-        filenames = pool.imap_unordered(process_video, vid_paths, chunksize=chunksize)
-        for filename in filenames:
-            print(f"Finished processing of video {filename}\n")
+    t0 = time.perf_counter()
+    # create output destinations first as a precaution to avoid race conditions
+
+    # create output directories if they do not exist
+    output_dir = Path(__file__).parent.parent / output_dir_name
+    frame_count_subdirs = [output_dir / f"{i}_frames" for i in frame_counts]
+    for subdir in frame_count_subdirs:
+        if not subdir.exists():
+            Path.mkdir(subdir, parents=True)
+
+    # create csv file if it does not yet exist
+    csv_path = output_dir / "changepoints.csv"
+    if not csv_path.exists():
+        csv_path.touch()
+
+    # write header row, overwriting previous contents
+    with csv_path.open(mode="w", newline="") as csv_file:
+        writer = csv.writer(csv_file, delimiter=",")
+        writer.writerow(("video", "frame_count", "frame_indices"))
+
+    # run with multiprocessing
+    if use_multiprocessing:
+        with Pool() as pool:
+            filenames = pool.imap_unordered(
+                partial(
+                    process_video, frame_counts=frame_counts, output_dir=output_dir
+                ),
+                vid_paths,
+                chunksize=chunksize,
+            )
+            for filename in filenames:
+                print(f"Finished processing of video {filename}\n")
+    else:
+        for vid in vid_paths:
+            elapsed_time = process_video(vid, frame_counts, output_dir)
+            print(f"Finished processing of video {elapsed_time}\n")
+
+    return time.perf_counter() - t0
 
 
-def benchmark(sample_size: int = 32, chunksizes: list[int] | None = None) -> None:
+def benchmark(
+    frame_counts: list[int],
+    sample_size: int = 30,
+    chunksizes: list[int] | None = None,
+) -> None:
     """
-    Compares performance of the program on a random sample of all the videos when running with no multiprocessing, and with various chunk sizes for multiprocessing
+    Compares performance of the program on a random sample of all the videos when running with no multiprocessing, and with various chunk sizes for multiprocessing.
+    Can be used to determinie the best value of chunksize for the local machine.
     """
 
     if chunksizes is None:
         chunksizes = [1, 4, 8, 16]
 
+    # get random sample
     random.seed(0)
     vid_paths = random.sample(get_all_videos(), k=sample_size)
-    num_chunksizes = len(chunksizes)
-    multiprocessing_times = [0.0] * num_chunksizes
 
-    # time with no multiprocessing
-    t0 = time.perf_counter()
-    for vid in vid_paths:
-        filename = process_video(vid)
-        print(f"Finished processing of video: {filename}\n")
-    elapsed_single = time.perf_counter() - t0
-
-    # time with multiprocessing
-    for i in range(num_chunksizes):
-        t0 = time.perf_counter()
-        run(vid_paths=vid_paths, chunksize=chunksizes[i])
-        multiprocessing_times[i] = time.perf_counter() - t0
+    times = [
+        run(
+            vid_paths=vid_paths,
+            frame_counts=frame_counts,
+            chunksize=cs,
+            use_multiprocessing=use_mp,
+            output_dir_name="benchmark_output",
+        )
+        for use_mp, cs in zip([False] + [True] * len(chunksizes), [0] + chunksizes)
+    ]
 
     # display results
     print("Time Elapsed (in seconds):")
-    print(f"    No multiprocessing: {elapsed_single}")
-    for chunksize, elapsed_time in zip(chunksizes, multiprocessing_times):
-        print(f"    Multiprocessing chunksize={chunksize}: {elapsed_time}")
-
-    """
-    with 32 videos
-    Time Elapsed (in seconds):
-        No multiprocessing: 149.74174900026992
-        Multiprocessing chunksize=1: 90.34611150017008
-        Multiprocessing chunksize=4: 103.70775760011747
-        Multiprocessing chunksize=8: 87.80353360017762
-        Multiprocessing chunksize=16: 99.86084290035069
-    """
+    print(f"\tNo multiprocessing: {times[0]}")
+    for chunksize, elapsed_time in zip(chunksizes, times[1:]):
+        print(f"\tMultiprocessing chunksize={chunksize}: {elapsed_time}")
 
 
 def main() -> None:
-    all_vids = get_all_videos()
+    all_vids = get_all_videos()[:10]
 
-    t0 = time.perf_counter()
-    run(vid_paths=all_vids)
-    print(
-        f"Finished processing all videos in {(time.perf_counter() - t0)/(60*60)} hours."
+    output_dir_name = "output"
+    frame_counts = [1, 2, 3]
+
+    time_took = run(
+        vid_paths=all_vids,
+        frame_counts=frame_counts,
+        chunksize=8,
+        output_dir_name=output_dir_name,
     )
+    print(f"Finished processing all videos in {time_took/(60*60)} hours.")
 
 
 if __name__ == "__main__":

@@ -134,7 +134,7 @@ class VideoProcessor:
             )
 
     def select_frames_and_save_data(
-        self, frame_count: int, output_dir, csv_path: Path
+        self, frame_count: int, output_dir: Path, csv_path: Path
     ) -> None:
         frames, changepoints = self.select_frames(frame_count)
         self.save_frames_to_directory(output_dir, frames, frame_count)
@@ -144,9 +144,7 @@ class VideoProcessor:
             frame_count=frame_count,
         )
 
-    def process(
-        self, frame_counts: list[int], output_dir: Path, csv_path: Path
-    ) -> None:
+    def process(self, frame_counts: list[int], output_dir: Path) -> None:
         """
         Saves the selected frames for all counts in frame_count. Also stores the changepoints in a csv file.
         Files are stored in the following directory structure:
@@ -176,5 +174,5 @@ class VideoProcessor:
             self.select_frames_and_save_data(
                 frame_count=frame_count,
                 output_dir=output_dir,
-                csv_path=csv_path,
+                csv_path=output_dir / "changepoints.csv",
             )
