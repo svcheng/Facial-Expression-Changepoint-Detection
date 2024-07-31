@@ -136,12 +136,54 @@ def benchmark(
         print(f"\tMultiprocessing chunksize={chunksize}: {elapsed_time}")
 
 
+def configure_settings() -> tuple[list[int], str]:
+    """
+    Takes user input to set the frame counts and the output directory name.
+    """
+
+    default_frame_counts = [1, 2, 3]
+    default_output_dir_name = "output"
+
+    # get user input
+    print("Configure Settings: (default)")
+
+    # frame counts
+    while True:
+        print(
+            "Enter frame counts as space-separated positive integers: (1 2 3) ", end=""
+        )
+        try:
+            input_frame_counts = [int(s) for s in input().strip().split()]
+            if any(n <= 0 for n in input_frame_counts):
+                raise ValueError
+        except Exception:
+            print("Invalid input.")
+        else:
+            frame_counts = (
+                input_frame_counts if input_frame_counts else default_frame_counts
+            )
+            break
+
+    # output directory name
+    while True:
+        print("Enter name of output directory: (output) ", end="")
+        input_dir_name = input()
+        if not input_dir_name:
+            output_dir_name = default_output_dir_name
+            break
+        elif all(s.isalnum() or s == "_" for s in input_dir_name):
+            output_dir_name = input_dir_name
+            break
+        print("Name should only consist of alphanumeric characters.")
+
+    print("\n")
+
+    return frame_counts, output_dir_name
+
+
 def main() -> None:
     all_vids = get_all_videos()[:10]
-
-    output_dir_name = "output"
-    frame_counts = [1, 2, 3]
-
+    frame_counts, output_dir_name = configure_settings()
     time_took = run(
         vid_paths=all_vids,
         frame_counts=frame_counts,
