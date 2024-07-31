@@ -4,18 +4,17 @@
 
 - Python must be installed on the system, version 3.12 is ideal to guarantee the code runs
 
-## 1. Download the 'src' folder
+## 1. Download and unzip the project
 
-Ensure the folder is in the same folder as the dataset and that the dataset is named 'dataset':
+Ensure it is beside the folder containing the dataset and that the dataset folder is named 'dataset'. The videos may be in nested subfolders.
 ```
-    parentFolder/
-    	dataset/
-    	src/
+    dataset/
+    project/
 ```
 
 ## 2. Do the following in the command line:
 
-### a. `cd` into the 'src' folder
+### a. `cd` into the project folder
 
 ### b. Create a virtual environment
 
@@ -78,4 +77,4 @@ Windows/Mac/Linux: `deactivate`
 
 ---
 
-> Note: When rerunning the program, the virtual environment need not be recreated (skip step 2.a). Rerunning the program will overwrite the existing contents of the output folder.
+> Note: When rerunning the program, the virtual environment need not be recreated (skip step 2.b). Rerunning the program will overwrite the existing contents of the output folder.
