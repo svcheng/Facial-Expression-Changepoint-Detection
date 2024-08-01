@@ -4,7 +4,7 @@
 
 - Python must be installed on the system, version 3.12 is ideal to guarantee the code runs
 
-## 1. Download and unzip the project
+## 1. Clone/(download and unzip) the project
 
 Ensure it is beside the folder containing the dataset and that the dataset folder is named 'dataset'. The videos may be in nested subfolders.
 ```
