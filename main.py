@@ -182,7 +182,7 @@ def configure_settings() -> tuple[list[int], str]:
 
 
 def main() -> None:
-    all_vids = get_all_videos()[:10]
+    all_vids = get_all_videos()
     frame_counts, output_dir_name = configure_settings()
     time_took = run(
         vid_paths=all_vids,
